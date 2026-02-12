@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calendar with Notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#f4f6f8;
+  margin:0;
+}
+
+/* YEAR BAR */
+.year-bar {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:20px;
+  font-size:26px;
+  font-weight:bold;
+  padding:15px;
+  color:#0d6efd;
+}
+.year-btn {
+  cursor:pointer;
+  padding:5px 12px;
+  border-radius:6px;
+  background:#e9f1ff;
+}
+.year-btn:hover { background:#d0e4ff; }
+
+/* MONTH BAR (TOP) */
+.months-bar {
+  display:flex;
+  justify-content:space-between;
+  padding:10px;
+  background:#fff;
+  margin:0 auto;
+  width:1100px;
+  border-radius:8px 8px 0 0;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+.month {
+  padding:6px 10px;
+  cursor:pointer;
+  border-radius:5px;
+  font-weight:bold;
+}
+.month.active, .month:hover {
+  background:#0d6efd;
+  color:#fff;
+}
+
+/* MAIN CONTAINER */
+.container {
+  width:1100px;
+  height:600px;
+  margin:0 auto 30px auto;
+  background:#fff;
+  border-radius:0 0 8px 8px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  display:flex;
+  flex-direction:column;
+}
+
+/* CALENDAR */
+.calendar {
+  height:50%;
+  padding:15px;
+  border-bottom:1px solid #ddd;
+}
+.header {
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+.weekdays, .days {
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  text-align:center;
+}
+.weekdays div { font-weight:bold; }
+.days div {
+  padding:8px;
+  margin:2px;
+  cursor:pointer;
+  border-radius:6px;
+  position:relative;
+}
+.days div:hover { background:#e9f1ff; }
+.days .active {
+  background:#0d6efd;
+  color:#fff;
+}
+
+/* NOTE INDICATOR */
+.has-note {
+  background:#e6f7ff;
+  font-weight:bold;
+}
+
+/* TOOLTIP */
+.tooltip::after {
+  content: attr(data-note);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* NOTES */
+.details {
+  height:50%;
+  padding:15px;
+  overflow-y:auto;
+}
+.note-card {
+  border:1px solid #ddd;
+  border-radius:6px;
+  padding:10px;
+  margin-bottom:10px;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .months-bar {
+    flex-wrap:wrap;
+    width:100%;
+  }
+  .container {
+    width:100%;
+    height:auto;
+  }
+  .calendar, .details {
+    height:auto;
+  }
+}
+
+/* TODAY HIGHLIGHT */
+.today {
+  background: #fff3cd;
+  border: 1px solid #ffecb5;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="year-bar">
+  <span class="year-btn" onclick="changeYear(-1)">⬅</span>
+  <span id="yearDisplay"></span>
+  <span class="year-btn" onclick="changeYear(1)">➡</span>
+</div>
+
+<div class="months-bar" id="months"></div>
+
+<div class="container">
+
+  <div class="calendar">
+    <div class="header" id="monthYear"></div>
+    <div class="weekdays">
+      <div>Sun</div><div>Mon</div><div>Tue</div>
+      <div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div class="days" id="days"></div>
+  </div>
+
+  <div class="details" id="details">
+    <b>Select a date</b>
+  </div>
+
+</div>
+
+<script>
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+
+const months = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+const data = {
+ /* January */
+ "2026-1-1":  { note: "New Year holiday" },
+  "2026-1-2": { note: "Leave" },
+  "2026-1-5": { note: "Leave" },
+  "2026-1-8": { note: "Leave" },
+  "2026-1-14": { note: "Leave" },
+ "2026-1-15": { note: "Pongal holiday" },
+  "2026-1-26": { note: "Republic Day holiday" },
+  "2027-1-26": { note: "Republic Day holiday" },
+  "2028-1-26": { note: "Republic Day holiday" },
+  "2026-1-16": { note: "Leave" },
+  "2027-1-1": { note: "Happy New year" },
+  "2028-1-1": { note: "Happy New year" },
+  
+ /* February */
+ "2026-2-6": { note: "leave" },
+  "2026-2-28": { note: "Xerago day out" },
+/* March */
+"2026-3-19": { note: "Eid al-Fitr holiday (Day 1)" },
+  "2026-3-20": { note: "Eid al-Fitr holiday (Day 2)" },
+  "2026-3-24": { note: "Kiruthika birthday" },
+  "2027-3-24": { note: "Kiruthika birthday" },
+  "2028-3-24": { note: "Kiruthika birthday" },
+  
+/* April */
+"2026-4-14": { note: "Dr. B. R. Ambedkar’s Birthday / Tamil New Year holiday" },
+"2027-4-14": { note: "Dr. B. R. Ambedkar’s Birthday / Tamil New Year holiday" },
+"2028-4-14": { note: "Dr. B. R. Ambedkar’s Birthday / Tamil New Year holiday" },
+"2026-4-12": { note: "Thanvik birthday" },
+"2027-4-12": { note: "Thanvik birthday" },
+"2028-4-12": { note: "Thanvik birthday" },
+/* May */
+"2026-5-1":  { note: "Labour Day holiday" },
+  "2026-5-28": { note: "Bakrid holiday" },
+  "2026-5-26": { note: "Eid al-Adha holiday (Day 1)" },
+  "2026-5-27": { note: "Eid al-Adha holiday (Day 2)" },
+/* June */
+"2026-6-16": { note: "Islamic New Year holiday (Day 1)" },
+  "2026-6-17": { note: "Islamic New Year holiday (Day 2)" },
+  "2026-6-9": { note: "My birthday" },
+  "2027-6-9": { note: "My birthday" },
+  "2028-6-9": { note: "My birthday" },
+  "2029-6-9": { note: "My birthday" },
+/* July */
+/* August */
+"2026-8-25": { note: "Prophet Mohammed's (PBUH) Birthday" },
+/* September */
+"2026-9-14": { note: "Vinayagar Chathurthi holiday" },
+/* October */
+"2026-10-2": { note: "Gandhi Jayanthi holiday" },
+  "2026-10-19": { note: "Ayudha Poojai holiday" },
+/* November */
+"2026-11-9": { note: "Diwali holiday" },
+"2026-11-30": { note: "Commemoration Day" },
+/* December */
+    "2025-12-31": { note: "Leave" },
+    "2026-12-25": { note: "Christmas holiday" },
+      
+  "2026-12-3": { note: "UAE National Day holiday (Day 2)" },
+"2026-12-2": { note: "UAE National Day holiday (Day 2)" }
+
+};
+
+const monthsDiv = document.getElementById("months");
+const daysDiv = document.getElementById("days");
+const monthYear = document.getElementById("monthYear");
+const details = document.getElementById("details");
+const yearDisplay = document.getElementById("yearDisplay");
+
+months.forEach((m,i)=>{
+  const d=document.createElement("div");
+  d.className="month";
+  d.innerText=m.substring(0,3);
+  d.onclick=()=>selectMonth(i,d);
+  monthsDiv.appendChild(d);
+});
+
+function changeYear(step){
+  currentYear+=step;
+  yearDisplay.innerText=currentYear;
+  renderCalendar(currentMonth);
+  showMonthNotes(currentMonth);
+}
+
+function selectMonth(m,el){
+  document.querySelectorAll(".month").forEach(x=>x.classList.remove("active"));
+  el.classList.add("active");
+  currentMonth=m;
+  renderCalendar(m);
+  showMonthNotes(m);
+}
+
+function renderCalendar(m){
+  daysDiv.innerHTML = "";
+  monthYear.innerText = months[m] + " " + currentYear;
+
+  const firstDay = new Date(currentYear, m, 1).getDay();
+  const totalDays = new Date(currentYear, m + 1, 0).getDate();
+  const today = new Date();
+
+  for (let i = 0; i < firstDay; i++) {
+    daysDiv.appendChild(document.createElement("div"));
+  }
+
+  for (let d = 1; d <= totalDays; d++) {
+    const cell = document.createElement("div");
+    cell.innerText = d;
+    const key = currentYear + "-" + (m + 1) + "-" + d;
+
+    if (data[key]) {
+      cell.classList.add("has-note", "tooltip");
+      cell.setAttribute("data-note", data[key].note);
+    }
+
+    if (
+      d === today.getDate() &&
+      m === today.getMonth() &&
+      currentYear === today.getFullYear()
+    ) {
+      cell.classList.add("today");
+    }
+
+    cell.onclick = () => showDayNotes(m, d, cell);
+    daysDiv.appendChild(cell);
+  }
+}
+
+function showMonthNotes(m){
+  details.innerHTML="<b>Month Notes</b>";
+  let found=false;
+
+  for(const key in data){
+    const [y,mm,dd]=key.split("-");
+    if(+y===currentYear && +mm===m+1){
+      found=true;
+      details.innerHTML+=`
+        <div class="note-card">
+          <b>${dd} ${months[m]} ${y}</b>
+          <p>${data[key].note}</p>
+        </div>`;
+    }
+  }
+  if(!found) details.innerHTML+="<p>No notes for this month</p>";
+}
+
+function showDayNotes(m,d,cell){
+  document.querySelectorAll(".days div").forEach(c=>c.classList.remove("active"));
+  cell.classList.add("active");
+
+  const key=currentYear+"-"+(m+1)+"-"+d;
+  details.innerHTML=`<b>${d} ${months[m]} ${currentYear}</b>`;
+
+  if(data[key]){
+    details.innerHTML+=`<p>${data[key].note}</p>`;
+  } else {
+    details.innerHTML+="<p>No notes</p>";
+  }
+}
+
+yearDisplay.innerText=currentYear;
+selectMonth(currentMonth, monthsDiv.children[currentMonth]);
+</script>
+
+</body>
+</html>
