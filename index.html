@@ -196,67 +196,70 @@ const months = [
   "January","February","March","April","May","June",
   "July","August","September","October","November","December"
 ];
-
-const data = {
+/* Permanent Events (Repeat Every Year) */
+const permanentEvents = {
+  "1-26": { note: "Republic Day holiday" },
+  "1-1": { note: "New Year Holiday" },
+  "6-9": { note: "My Birthday 🎂" },
+  "12-31": { note: "Anvith birthday 🎂" },
+  "1-1":  { note: "New Year holiday" },
+  "3-24": { note: "Kiruthika birthday" },
+  "4-12": { note: "Thanvik birthday" },
+  "10-2": { note: "Gandhi Jayanthi holiday" },
+  "4-14": { note: "Tamil New Year holiday" },
+  "5-1":  { note: "Labour Day holiday" },
+  "12-25": { note: "Christmas holiday" }
+};
+/* Temporary Events (Specific Year Only) */
+const temporaryEvents =  {
  /* January */
- "2026-1-1":  { note: "New Year holiday" },
+ 
   "2026-1-2": { note: "Leave" },
   "2026-1-5": { note: "Leave" },
   "2026-1-8": { note: "Leave" },
   "2026-1-14": { note: "Leave" },
  "2026-1-15": { note: "Pongal holiday" },
-  "2026-1-26": { note: "Republic Day holiday" },
-  "2027-1-26": { note: "Republic Day holiday" },
-  "2028-1-26": { note: "Republic Day holiday" },
+  
   "2026-1-16": { note: "Leave" },
-  "2027-1-1": { note: "Happy New year" },
-  "2028-1-1": { note: "Happy New year" },
   
  /* February */
  "2026-2-6": { note: "leave" },
-  "2026-2-28": { note: "Xerago day out" },
-  "2026-2-18": { note: "Anvith 45 day vaccination" },
+ 
+   "2026-2-28": { note: "Anvith 45 day vaccination" },
 /* March */
 "2026-3-19": { note: "Eid al-Fitr holiday (Day 1)" },
   "2026-3-20": { note: "Eid al-Fitr holiday (Day 2)" },
-  "2026-3-24": { note: "Kiruthika birthday" },
-  "2027-3-24": { note: "Kiruthika birthday" },
-  "2028-3-24": { note: "Kiruthika birthday" },
-  "2026-3-25": { note: "Anvith 2 vaccination" },
+  "2026-3-25": { note: "Anvith 2nd vaccination" },
+  
+  
   
 /* April */
-"2026-4-14": { note: "Dr. B. R. Ambedkar’s Birthday / Tamil New Year holiday" },
-"2027-4-14": { note: "Dr. B. R. Ambedkar’s Birthday / Tamil New Year holiday" },
-"2028-4-14": { note: "Dr. B. R. Ambedkar’s Birthday / Tamil New Year holiday" },
-"2026-4-12": { note: "Thanvik birthday" },
-"2027-4-12": { note: "Thanvik birthday" },
-"2028-4-12": { note: "Thanvik birthday" },
+
+
+
 /* May */
-"2026-5-1":  { note: "Labour Day holiday" },
+
   "2026-5-28": { note: "Bakrid holiday" },
   "2026-5-26": { note: "Eid al-Adha holiday (Day 1)" },
   "2026-5-27": { note: "Eid al-Adha holiday (Day 2)" },
 /* June */
 "2026-6-16": { note: "Islamic New Year holiday (Day 1)" },
   "2026-6-17": { note: "Islamic New Year holiday (Day 2)" },
-  "2026-6-9": { note: "My birthday" },
-  "2027-6-9": { note: "My birthday" },
-  "2028-6-9": { note: "My birthday" },
-  "2029-6-9": { note: "My birthday" },
+
 /* July */
 /* August */
 "2026-8-25": { note: "Prophet Mohammed's (PBUH) Birthday" },
 /* September */
 "2026-9-14": { note: "Vinayagar Chathurthi holiday" },
 /* October */
-"2026-10-2": { note: "Gandhi Jayanthi holiday" },
+
   "2026-10-19": { note: "Ayudha Poojai holiday" },
 /* November */
 "2026-11-9": { note: "Diwali holiday" },
 "2026-11-30": { note: "Commemoration Day" },
 /* December */
     "2025-12-31": { note: "Leave" },
-    "2026-12-25": { note: "Christmas holiday" },
+    
       
   "2026-12-3": { note: "UAE National Day holiday (Day 2)" },
 "2026-12-2": { note: "UAE National Day holiday (Day 2)" }
@@ -307,11 +310,18 @@ function renderCalendar(m){
   for (let d = 1; d <= totalDays; d++) {
     const cell = document.createElement("div");
     cell.innerText = d;
-    const key = currentYear + "-" + (m + 1) + "-" + d;
 
-    if (data[key]) {
+    const tempKey = currentYear + "-" + (m + 1) + "-" + d;
+    const permKey = (m + 1) + "-" + d;
+
+    if (temporaryEvents[tempKey] || permanentEvents[permKey]) {
       cell.classList.add("has-note", "tooltip");
-      cell.setAttribute("data-note", data[key].note);
+
+      const noteText =
+        temporaryEvents[tempKey]?.note ||
+        permanentEvents[permKey]?.note;
+
+      cell.setAttribute("data-note", noteText);
     }
 
     if (
@@ -328,33 +338,68 @@ function renderCalendar(m){
 }
 
 function showMonthNotes(m){
-  details.innerHTML="<b>Month Notes</b>";
-  let found=false;
+  details.innerHTML = "<b>Month Notes</b>";
 
-  for(const key in data){
-    const [y,mm,dd]=key.split("-");
-    if(+y===currentYear && +mm===m+1){
-      found=true;
-      details.innerHTML+=`
+  let found = false;
+
+  /* -------- TEMPORARY EVENTS -------- */
+  for (const key in temporaryEvents) {
+    const parts = key.split("-");
+    const y = parseInt(parts[0]);
+    const mm = parseInt(parts[1]);
+    const dd = parseInt(parts[2]);
+
+    if (y === currentYear && mm === (m + 1)) {
+      found = true;
+
+      details.innerHTML += `
         <div class="note-card">
-          <b>${dd} ${months[m]} ${y}</b>
-          <p>${data[key].note}</p>
-        </div>`;
+          <b>${dd} ${months[m]} ${currentYear}</b>
+          <p>${temporaryEvents[key].note}</p>
+        </div>
+      `;
     }
   }
-  if(!found) details.innerHTML+="<p>No notes for this month</p>";
+
+  /* -------- PERMANENT EVENTS -------- */
+  for (const key in permanentEvents) {
+    const parts = key.split("-");
+    const mm = parseInt(parts[0]);
+    const dd = parseInt(parts[1]);
+
+    if (mm === (m + 1)) {
+      found = true;
+
+      details.innerHTML += `
+        <div class="note-card">
+          <b>${dd} ${months[m]} ${currentYear}</b>
+          <p>${permanentEvents[key].note}</p>
+        </div>
+      `;
+    }
+  }
+
+  if (!found) {
+    details.innerHTML += "<p>No notes for this month</p>";
+  }
 }
 
 function showDayNotes(m,d,cell){
   document.querySelectorAll(".days div").forEach(c=>c.classList.remove("active"));
   cell.classList.add("active");
 
-  const key=currentYear+"-"+(m+1)+"-"+d;
+  const tempKey = currentYear+"-"+(m+1)+"-"+d;
+  const permKey = (m+1)+"-"+d;
+
   details.innerHTML=`<b>${d} ${months[m]} ${currentYear}</b>`;
 
-  if(data[key]){
-    details.innerHTML+=`<p>${data[key].note}</p>`;
-  } else {
+  if(temporaryEvents[tempKey]){
+    details.innerHTML+=`<p>${temporaryEvents[tempKey].note}</p>`;
+  }
+  else if(permanentEvents[permKey]){
+    details.innerHTML+=`<p>${permanentEvents[permKey].note}</p>`;
+  }
+  else {
     details.innerHTML+="<p>No notes</p>";
   }
 }
@@ -365,4 +410,3 @@ selectMonth(currentMonth, monthsDiv.children[currentMonth]);
 
 </body>
 </html>
-
